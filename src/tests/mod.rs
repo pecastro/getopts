@@ -386,6 +386,7 @@ fn test_optflagopt() {
     let long_args = vec!["--test".to_string()];
     let mut opts = Options::new();
     opts.optflagopt("t", "test", "testing", "ARG");
+
     match opts.parse(&long_args) {
         Ok(ref m) => {
             assert!(m.opt_present("test"));
@@ -651,6 +652,8 @@ fn test_multi() {
     opts.optopt("e", "", "encrypt", "ENCRYPT");
     opts.optopt("", "encrypt", "encrypt", "ENCRYPT");
     opts.optopt("f", "", "flag", "FLAG");
+    opts.optflagopt("", "devtools", "Start remote devtools server on port", "0");
+
     let no_opts: &[&str] = &[];
 
     let args_single = vec!["-e".to_string(), "foo".to_string()];
@@ -755,6 +758,38 @@ fn test_multi() {
     );
     assert_eq!(matches_both.opts_str_first(&["f"]), None);
     assert_eq!(matches_both.opts_str_first(no_opts), None);
+
+    let multi_args = vec![
+        "-e".to_string(),
+        "foo".to_string(),
+        "--encrypt".to_string(),
+        "bar".to_string(),
+        "--devtools".to_string(),
+        "20".to_string(),
+    ];
+    let matches_multi = &match opts.parse(&multi_args) {
+        Ok(m) => {
+            assert!(m.opt_present(&"devtools".to_string()));
+            assert!(m.opt_present("devtools"));
+            assert!(m.opt_defined("devtools"));
+            // assert_ne!(m.opt_str("devtools").unwrap(), "20"); // PANIC HERE
+            m
+        }
+        _ => panic!(),
+    };
+    assert!(matches_multi.opt_present(&"encrypt".to_string()));
+    assert!(matches_multi.opt_present("encrypt"));
+    assert!(matches_multi.opt_defined("encrypt"));
+    assert_eq!(matches_multi.opt_str("encrypt").unwrap(), "bar");
+    assert_eq!(matches_multi.opts_str(&["encrypt".to_string()]).unwrap(), "bar");
+
+    assert!(matches_multi.opt_present(&"devtools".to_string()));
+    assert!(matches_multi.opt_present("devtools"));
+    assert!(matches_multi.opt_defined("devtools"));
+    assert_eq!(matches_multi.opt_str("devtools").unwrap(), "20"); // PANIC HERE
+    assert_eq!(matches_multi.opts_str(&["devtools".to_string()]).unwrap(), "20"); // PANIC HERE
+
+
 }
 
 #[test]
